@@ -164,7 +164,40 @@ export default function SignInPage() {
 ### `components/Navbar.tsx` — the top menu bar
 
 Shown on every page: logo, links (Browse Jobs, Post a Job, Dashboard), and a
-Sign In button.
+sign-in/sign-out button.
+
+The Navbar **changes depending on whether you're logged in**:
+
+- It asks NextAuth "who's logged in?" using `useSession()`.
+- If someone **is** signed in, it shows a **Sign Out** button (which runs the `logout`
+  action from `lib/auth.ts`).
+- If **nobody** is signed in, it shows the **Sign In** link instead.
+
+For this to work, the whole app is wrapped in a `SessionProvider` in
+`app/layout.tsx` — that's the piece that makes the "who's logged in?" info available
+to the Navbar everywhere.
+
+```tsx
+"use client";
+import { useSession } from "next-auth/react";
+import { logout } from "@/lib/auth";
+
+export default function Navbar() {
+  // Ask NextAuth who's logged in (empty if nobody is).
+  const { data: session } = useSession();
+
+  return (
+    // ...logo and links...
+
+    // Signed in? Show Sign Out. Otherwise show Sign In.
+    session ? (
+      <button onClick={() => logout()} className="...">Sign Out</button>
+    ) : (
+      <Link href="/auth/signin" className="...">Sign In</Link>
+    )
+  );
+}
+```
 
 ### `app/jobs`, `app/jobs/post`, `app/dashb` — placeholder pages
 
