@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//this is just an account the user has when creating a website - This schema is taken from NextAuth.js
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade) //those are relationships between the user and the account - a user can have multiple accounts, but an account can only belong to one user
+
+  //cascade means that if the user is deleted, the account will also be deleted
+  @@unique([provider, providerAccountId])
+}
+
+//this will contain the session information for the user - This schema is taken from NextAuth.js
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade) //those are relationships between the user and the session - a user can have multiple sessions, but a session can only belong to one user
+  //cascade means that if the user is deleted, the session will also be deleted
+}
+
+//this is for auth purposes - This schema is taken from NextAuth.js
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String        @id @default(cuid()) //cuid() generates a unique string ID for each user
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String? //profile picture of the user - link to their github picture
+  accounts      Account[] //a user can have multiple accounts - for example, if they sign in with github and google, they will have two accounts
+  sessions      Session[] //a user can have multiple sessions - for example, if they log in from multiple devices, they will have multiple sessions
+  jobs          Job[]         @relation("PostedJobs") //a user can have multiple jobs - for example, if they post multiple jobs, they will have multiple jobs, and @relation("PostedJobs") is used to specify the relationship between the user and the job
+  applications  Application[] //a user can have multiple applications - for example, if they apply to multiple jobs, they will have multiple applications
+}
+
+model Job {
+  id          String  @id @default(cuid())
+  title       String
+  company     String
+  location    String
+  type        String
+  description String  @db.Text //this is a long text field, so we use @db.Text to tell Prisma to use the Text type in the database
+  salary      String?
+
+  postedAt     DateTime      @default(now())
+  postedBy     User          @relation("PostedJobs", fields: [postedById], references: [id]) //those are relationships between the user and the job - a user can have multiple jobs, but a job can only belong to one user
+  postedById   String
+  updatedAt    DateTime      @updatedAt
+  applications Application[] //a job can have multiple applications - for example, if multiple users apply to the same job, they will have multiple applications
+}
+
+model Application {
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String
+  status    String   @default("PENDING") //status of the application - pending, reviewing, accepted, rejected
+  appliedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id]) //those are relationships between the user and the application - a user can have multiple applications, but an application can only belong to one user
+  job  Job  @relation(fields: [jobId], references: [id]) //those are relationships between the job and the application - a job can have multiple applications, but an application can only belong to one job
+
+  @@unique([jobId, userId]) //a user can only apply to a job once
+}
