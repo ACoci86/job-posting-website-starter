@@ -219,11 +219,22 @@ export default function Navbar() {
 }
 ```
 
-### `app/jobs`, `app/jobs/post`, `app/dashb` — placeholder pages
+### `app/jobs/post/page.tsx` — the "Post a Job" form
 
-The pages for Browse Jobs, Post a Job, and Dashboard. Right now they just show a
-title — empty rooms waiting to be furnished. They exist so the menu links don't
-hit a "page not found" error.
+A form for posting a job. Its fields match what a job stores in the database
+(see `prisma/schema.prisma`): **Job Title, Company, Location, Job Type** (a dropdown:
+Full-time / Part-time / Contract / Internship), **Salary** (optional), and a
+**Description** box, plus a **Post Job** button.
+
+> **Note:** right now this is just the form's looks — filling it in and clicking
+> "Post Job" doesn't save anything yet. Making it actually save a job to the database
+> (and checking the user is logged in first) is a separate step, still to be done.
+
+### `app/jobs`, `app/dashb` — placeholder pages
+
+The pages for Browse Jobs and Dashboard. Right now they just show a title — empty
+rooms waiting to be furnished. They exist so the menu links don't hit a
+"page not found" error.
 
 ---
 
