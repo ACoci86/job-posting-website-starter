@@ -18,9 +18,16 @@ export default function Navbar() {
           <span className="text-lg font-semibold">Job Board</span>
         </Link>
         <div className="flex items-center gap-6 text-sm text-gray-700">
+          {/* Anyone can browse jobs, even when not signed in. */}
           <Link href="/jobs" className="hover:text-black">Browse Jobs</Link>
-          <Link href="/jobs/post" className="hover:text-black">Post a Job</Link>
-          <Link href="/dashb" className="hover:text-black">Dashboard</Link>
+
+          {/* Only show Post a Job and Dashboard when the user is signed in. */}
+          {session && (
+            <>
+              <Link href="/jobs/post" className="hover:text-black">Post a Job</Link>
+              <Link href="/dashb" className="hover:text-black">Dashboard</Link>
+            </>
+          )}
 
           {/* If the user is signed in, show a Sign Out button.
               If not, show the Sign In link instead. */}

@@ -169,6 +169,9 @@ sign-in/sign-out button.
 The Navbar **changes depending on whether you're logged in**:
 
 - It asks NextAuth "who's logged in?" using `useSession()`.
+- **Browse Jobs** is always shown — anyone can look at jobs.
+- **Post a Job** and **Dashboard** only show when you're signed in (logged-out
+  visitors don't see them, since they can't use them anyway).
 - If someone **is** signed in, it shows a **Sign Out** button (which runs the `logout`
   action from `lib/auth.ts`).
 - If **nobody** is signed in, it shows the **Sign In** link instead.
@@ -176,6 +179,12 @@ The Navbar **changes depending on whether you're logged in**:
 For this to work, the whole app is wrapped in a `SessionProvider` in
 `app/layout.tsx` — that's the piece that makes the "who's logged in?" info available
 to the Navbar everywhere.
+
+> **Important — this is not real protection yet.** Hiding Post a Job and Dashboard
+> from the menu only removes the *links*. Someone could still reach those pages by
+> typing the address (e.g. `/jobs/post`) directly into the browser. To truly block
+> logged-out visitors, each of those pages needs to check for a login and redirect
+> people away if they're not signed in. That's a separate step, still to be done.
 
 ```tsx
 "use client";
@@ -187,7 +196,18 @@ export default function Navbar() {
   const { data: session } = useSession();
 
   return (
-    // ...logo and links...
+    // ...logo...
+
+    // Browse Jobs is always shown.
+    <Link href="/jobs">Browse Jobs</Link>
+
+    // Post a Job and Dashboard only show when signed in.
+    session && (
+      <>
+        <Link href="/jobs/post">Post a Job</Link>
+        <Link href="/dashb">Dashboard</Link>
+      </>
+    )
 
     // Signed in? Show Sign Out. Otherwise show Sign In.
     session ? (
