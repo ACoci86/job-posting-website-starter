@@ -92,13 +92,74 @@ import { handlers } from "@/auth";
 export const { GET, POST } = handlers;
 ```
 
+### `lib/auth.ts` — the buttons' "log in" and "log out" actions
+
+This file holds two simple actions the buttons use: `login` starts the GitHub sign-in
+and sends you to the home page afterwards; `logout` signs you out and sends you back
+to the sign-in page. They just wrap the `signIn`/`signOut` that NextAuth made for us
+in `auth.ts`.
+
+The `"use server"` line at the top is important: it officially labels these as
+**server actions** — work that always runs on the server (logging in/out touches
+secrets and the database, so it can't run in the browser). That label is what lets a
+button in the browser safely ask the server to run them.
+
+```ts
+//this includes all the server action for the user to login and logout
+"use server";
+import { signIn, signOut } from "@/auth";
+
+export const login = async () => {
+  await signIn("github", { redirectTo: "/" });
+};
+
+export const logout = async () => {
+  await signOut({ redirectTo: "/auth/signin" });
+};
+```
+
 ---
 
 ## The pages people see
 
 ### `app/auth/signin/page.tsx` — the sign-in screen
 
-The "Welcome to JobList" screen with the "Continue with GitHub" button.
+The "Welcome to JobList" screen with the "Continue with GitHub" button. The button is
+hooked up to the `login` action from `lib/auth.ts`, so clicking it actually starts the
+GitHub sign-in.
+
+The `"use client"` line at the top makes this page run **in the browser**. That's
+needed because the button uses `onClick`, which is a browser-only feature — clicks
+only happen in the browser, so the page that listens for them has to live there too.
+
+```tsx
+"use client";
+import { login } from "@/lib/auth";
+
+export default function SignInPage() {
+  return (
+    // ...card and styling...
+    <button onClick={login} className="...">
+      {/* GitHub icon */}
+      Continue with GitHub
+    </button>
+    // ...
+  );
+}
+```
+
+**How the two pieces work together (the part that took some figuring out):**
+
+- The **button** lives in the browser (`"use client"`) so it can react to a click.
+- The **login work** lives on the server (`"use server"` in `lib/auth.ts`) because it
+  deals with secrets and the database.
+- When you click, the browser button calls the server action, and the server does the
+  actual logging in. The two labels (`"use client"` and `"use server"`) are what let
+  these two worlds talk to each other safely.
+
+> Without **both** labels you get errors: a server page can't use `onClick`, and the
+> browser isn't allowed to run the login code directly. Marking the page as browser
+> code **and** the login as a server action is what makes the button work.
 
 ### `components/Navbar.tsx` — the top menu bar
 
@@ -130,6 +191,62 @@ remembers who they are — plus empty pages ready for the actual job-board featu
 
 ---
 
+## Setting up login (the secret keys)
+
+The app needs a few private keys to work. These live in env files (`.env` and
+`.env.local`), which are **not** committed to GitHub — they stay on your machine.
+
+### 1. The auth secret
+
+Logins are stored in an encrypted cookie. To lock/unlock that cookie, the app needs
+a secret key called `AUTH_SECRET`.
+
+Make a random secret and put it in `.env.local`:
+
+```bash
+openssl rand -base64 33
+```
+
+Then add the result to `.env.local`:
+
+```
+AUTH_SECRET=the-random-value-you-just-made
+```
+
+> **Heads up — a common gotcha:** some tutorials say to run `npx auth secret`, which
+> is supposed to create `.env.local` for you automatically. On some machines that
+> command installs the **wrong library (Better Auth)** instead of the one this project
+> uses (NextAuth). When that happens it only **prints** a secret named
+> `BETTER_AUTH_SECRET` and does **not** create any file. If that happens to you, just
+> ignore the name, make your own secret with the `openssl` command above, and save it
+> as `AUTH_SECRET` yourself. The end result is identical.
+
+### 2. The GitHub login keys
+
+For the "Continue with GitHub" button to work, you need to register an app with GitHub:
+
+1. Go to GitHub → **Settings → Developer settings → OAuth Apps → New OAuth App**.
+2. Fill in the app name and set the callback URL to
+   `http://localhost:3000/api/auth/callback/github`.
+3. GitHub gives you a **Client ID** and a **Client Secret**.
+
+Add them to `.env.local`:
+
+```
+AUTH_GITHUB_ID=your-client-id
+AUTH_GITHUB_SECRET=your-client-secret
+```
+
+### 3. The database connection
+
+`.env` also needs the address of your database:
+
+```
+DATABASE_URL=your-database-connection-string
+```
+
+---
+
 ## Running the project
 
 ```bash
@@ -138,5 +255,5 @@ npx prisma generate    # build the database code from the blueprint
 npm run dev            # start the app at http://localhost:3000
 ```
 
-You'll need a `.env` file (not committed) with your database connection and GitHub
-login keys.
+Make sure your `.env` and `.env.local` files (above) are filled in first, or login
+and the database won't work.

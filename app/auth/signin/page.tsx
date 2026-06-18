@@ -1,3 +1,6 @@
+"use client";
+import { login } from "@/lib/auth";
+
 export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
@@ -9,7 +12,7 @@ export default function SignInPage() {
           </p>
         </div>
 
-        <button className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button onClick={login} className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
           <svg
             className="h-5 w-5"
             fill="currentColor"

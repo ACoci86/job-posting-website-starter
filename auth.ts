@@ -3,6 +3,7 @@ import GitHub from "next-auth/providers/github";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
+
 export const {auth, handlers, signIn, signOut} = NextAuth({
     session: {
         // Remember who's logged in using a cookie in their browser,
