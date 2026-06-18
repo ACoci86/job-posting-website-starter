@@ -226,9 +226,68 @@ A form for posting a job. Its fields match what a job stores in the database
 Full-time / Part-time / Contract / Internship), **Salary** (optional), and a
 **Description** box, plus a **Post Job** button.
 
-> **Note:** right now this is just the form's looks — filling it in and clicking
-> "Post Job" doesn't save anything yet. Making it actually save a job to the database
-> (and checking the user is logged in first) is a separate step, still to be done.
+**What happens when you submit it:**
+
+1. The page is a browser page (`"use client"`) so it can react to the form being sent.
+2. When you click **Post Job**, it gathers the field values and sends them to the
+   `/api/jobs` endpoint (see below).
+3. If the save works, it sends you to the `/jobs` page. If it fails, it logs an error
+   and keeps you on the form.
+
+```tsx
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.currentTarget);
+  const data = {
+    title: formData.get("title"),
+    company: formData.get("company"),
+    // ...the other fields...
+  };
+
+  try {
+    const response = await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Failed to post job");
+    window.location.href = "/jobs"; // go to the jobs page after a successful post
+  } catch (error) {
+    console.error("Error posting job:", error);
+  }
+};
+```
+
+### `app/api/jobs/route.ts` — the "save a job" endpoint
+
+This is the behind-the-scenes endpoint the form talks to. It receives the job
+details, makes sure the user is logged in, and saves the job to the database.
+
+```ts
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(request: Request) {
+  // Only logged-in users can post. Otherwise send them to sign in.
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  }
+
+  try {
+    const data = await request.json();
+    // Save the job, tagged with who posted it.
+    const job = await prisma.job.create({
+      data: { ...data, postedById: session.user.id },
+    });
+    return NextResponse.json(job, { status: 201 });
+  } catch (error) {
+    console.error("Error creating job:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+```
 
 ### `app/jobs`, `app/dashb` — placeholder pages
 

@@ -1,8 +1,44 @@
+"use client";
+
+import { FormEvent } from "react";
+
 export default function PostJobPage() {
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      title: formData.get("title"),
+      company: formData.get("company"),
+      location: formData.get("location"),
+      type: formData.get("type"),
+      salary: formData.get("salary"),
+      description: formData.get("description"),
+    };
+
+    try {
+      const response = await fetch("/api/jobs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to post job");
+      }
+
+      window.location.href = "/jobs"; // Redirect to the jobs page after a successful post
+    } catch (error) {
+      console.error("Error posting job:", error);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Post a Job</h1>
-      <form className="space-y-6">
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label
             htmlFor="title"
