@@ -3,7 +3,7 @@
 A simple job posting website built with Next.js, where people can log in with their
 GitHub account, browse jobs, and post jobs.
 
-This README explains, in plain words, what each part of the project does — and shows
+This README explains, in plain words, what each part of the project does - and shows
 the code for the main files.
 
 ## Screenshot
@@ -14,7 +14,7 @@ the code for the main files.
 
 ## The login system (the main work)
 
-### `auth.ts` — the brain of logging in
+### `auth.ts` - the brain of logging in
 
 It says "let people log in with their GitHub account," and decides what to remember
 about them (their id and name). Everything else asks this file when it needs to deal
@@ -58,7 +58,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 });
 ```
 
-### `lib/prisma.ts` — the phone line to your database
+### `lib/prisma.ts` - the phone line to your database
 
 Any time the app needs to read or save info (like users), it goes through this file.
 It's set up so the app doesn't accidentally open hundreds of database connections
@@ -80,7 +80,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 export { prisma };
 ```
 
-### `app/api/auth/[...nextauth]/route.ts` — the doorway the browser knocks on
+### `app/api/auth/[...nextauth]/route.ts` - the doorway the browser knocks on
 
 When someone clicks "sign in," gets sent to GitHub, and comes back, all those
 behind-the-scenes web requests land here. It just hooks up the ready-made login
@@ -92,7 +92,7 @@ import { handlers } from "@/auth";
 export const { GET, POST } = handlers;
 ```
 
-### `lib/auth.ts` — the buttons' "log in" and "log out" actions
+### `lib/auth.ts` - the buttons' "log in" and "log out" actions
 
 This file holds two simple actions the buttons use: `login` starts the GitHub sign-in
 and sends you to the home page afterwards; `logout` signs you out and sends you back
@@ -100,7 +100,7 @@ to the sign-in page. They just wrap the `signIn`/`signOut` that NextAuth made fo
 in `auth.ts`.
 
 The `"use server"` line at the top is important: it officially labels these as
-**server actions** — work that always runs on the server (logging in/out touches
+**server actions** - work that always runs on the server (logging in/out touches
 secrets and the database, so it can't run in the browser). That label is what lets a
 button in the browser safely ask the server to run them.
 
@@ -122,14 +122,14 @@ export const logout = async () => {
 
 ## The pages people see
 
-### `app/auth/signin/page.tsx` — the sign-in screen
+### `app/auth/signin/page.tsx` - the sign-in screen
 
 The "Welcome to JobList" screen with the "Continue with GitHub" button. The button is
 hooked up to the `login` action from `lib/auth.ts`, so clicking it actually starts the
 GitHub sign-in.
 
 The `"use client"` line at the top makes this page run **in the browser**. That's
-needed because the button uses `onClick`, which is a browser-only feature — clicks
+needed because the button uses `onClick`, which is a browser-only feature - clicks
 only happen in the browser, so the page that listens for them has to live there too.
 
 ```tsx
@@ -161,7 +161,7 @@ export default function SignInPage() {
 > browser isn't allowed to run the login code directly. Marking the page as browser
 > code **and** the login as a server action is what makes the button work.
 
-### `components/Navbar.tsx` — the top menu bar
+### `components/Navbar.tsx` - the top menu bar
 
 Shown on every page: logo, links (Browse Jobs, Post a Job, Dashboard), and a
 sign-in/sign-out button.
@@ -169,7 +169,7 @@ sign-in/sign-out button.
 The Navbar **changes depending on whether you're logged in**:
 
 - It asks NextAuth "who's logged in?" using `useSession()`.
-- **Browse Jobs** is always shown — anyone can look at jobs.
+- **Browse Jobs** is always shown - anyone can look at jobs.
 - **Post a Job** and **Dashboard** only show when you're signed in (logged-out
   visitors don't see them, since they can't use them anyway).
 - If someone **is** signed in, it shows a **Sign Out** button (which runs the `logout`
@@ -177,10 +177,10 @@ The Navbar **changes depending on whether you're logged in**:
 - If **nobody** is signed in, it shows the **Sign In** link instead.
 
 For this to work, the whole app is wrapped in a `SessionProvider` in
-`app/layout.tsx` — that's the piece that makes the "who's logged in?" info available
+`app/layout.tsx` - that's the piece that makes the "who's logged in?" info available
 to the Navbar everywhere.
 
-> **Important — this is not real protection yet.** Hiding Post a Job and Dashboard
+> **Important - this is not real protection yet.** Hiding Post a Job and Dashboard
 > from the menu only removes the *links*. Someone could still reach those pages by
 > typing the address (e.g. `/jobs/post`) directly into the browser. To truly block
 > logged-out visitors, each of those pages needs to check for a login and redirect
@@ -219,7 +219,7 @@ export default function Navbar() {
 }
 ```
 
-### `app/jobs/post/page.tsx` — the "Post a Job" form
+### `app/jobs/post/page.tsx` - the "Post a Job" form
 
 A form for posting a job. Its fields match what a job stores in the database
 (see `prisma/schema.prisma`): **Job Title, Company, Location, Job Type** (a dropdown:
@@ -258,7 +258,7 @@ const handleSubmit = async (e) => {
 };
 ```
 
-### `app/api/jobs/route.ts` — the "save a job" endpoint
+### `app/api/jobs/route.ts` - the "save a job" endpoint
 
 This is the behind-the-scenes endpoint the form talks to. It receives the job
 details, makes sure the user is logged in, and saves the job to the database.
@@ -289,10 +289,10 @@ export async function POST(request: Request) {
 }
 ```
 
-### `app/jobs/page.tsx` — the "Browse Jobs" page
+### `app/jobs/page.tsx` - the "Browse Jobs" page
 
 This page **shows all the jobs** that have been posted. Because it's a server page, it
-reads them straight from the database — no API route needed:
+reads them straight from the database - no API route needed:
 
 ```tsx
 import { prisma } from "@/lib/prisma";
@@ -311,26 +311,59 @@ export default async function JobsPage() {
 }
 ```
 
-Two things worth knowing:
+Three things worth knowing:
 
 - **`orderBy: { postedAt: "desc" }`** shows the newest jobs first.
 - **`include: { postedBy: true }`** also loads the user who posted each job. Prisma
   doesn't load linked data automatically (the job row only stores the poster's id), so
-  you have to ask for it with `include` — that's what lets the card show "Posted by …".
+  you have to ask for it with `include`. That's what lets the card show "Posted by …".
+- **The search box actually filters now.** When you submit the form, the search text,
+  job type, and location get added to the page address (for example
+  `/jobs?q=react&type=Full-time&location=London`). The page reads those values from
+  `searchParams` and only fetches jobs that match.
 
-There's also a search box at the top (search text, job type, location). Right now it's
-just the look — it doesn't filter the list yet.
+How the filtering works in plain words:
 
-### `app/dashb` — placeholder page
+- `q` (the search text) matches jobs whose **title, company, or description** contain
+  the words you typed. The match ignores capital letters (`mode: "insensitive"`).
+- `type` keeps only jobs of that job type.
+- `location` keeps only jobs in that location.
+- If a box is left empty, that filter is skipped, so it doesn't narrow anything down.
 
-The Dashboard page. Right now it just shows a title — an empty room waiting to be
+```tsx
+const { q, type, location } = await searchParams;
+
+const jobs = await prisma.job.findMany({
+  where: {
+    AND: [
+      q
+        ? {
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { company: { contains: q, mode: "insensitive" } },
+              { description: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {},
+      type ? { type } : {},
+      location ? { location } : {},
+    ],
+  },
+  orderBy: { postedAt: "desc" },
+  include: { postedBy: true },
+});
+```
+
+### `app/dashb` - placeholder page
+
+The Dashboard page. Right now it just shows a title - an empty room waiting to be
 furnished. It exists so the menu link doesn't hit a "page not found" error.
 
 ---
 
 ## The database design
 
-### `prisma/schema.prisma` — the blueprint of your database
+### `prisma/schema.prisma` - the blueprint of your database
 
 What info you store and how it's shaped (users, accounts, etc.). Running
 `npx prisma generate` turns this blueprint into the code that `lib/prisma.ts` uses.
@@ -339,16 +372,16 @@ What info you store and how it's shaped (users, accounts, etc.). Running
 
 ## In one sentence
 
-GitHub login set up end-to-end — the screen people click, the doorway that handles
+GitHub login set up end-to-end - the screen people click, the doorway that handles
 the login, the brain that decides the rules, and the database connection that
-remembers who they are — plus empty pages ready for the actual job-board features.
+remembers who they are - plus empty pages ready for the actual job-board features.
 
 ---
 
 ## Setting up login (the secret keys)
 
 The app needs a few private keys to work. These live in env files (`.env` and
-`.env.local`), which are **not** committed to GitHub — they stay on your machine.
+`.env.local`), which are **not** committed to GitHub - they stay on your machine.
 
 ### 1. The auth secret
 
@@ -367,7 +400,7 @@ Then add the result to `.env.local`:
 AUTH_SECRET=the-random-value-you-just-made
 ```
 
-> **Heads up — a common gotcha:** some tutorials say to run `npx auth secret`, which
+> **Heads up - a common gotcha:** some tutorials say to run `npx auth secret`, which
 > is supposed to create `.env.local` for you automatically. On some machines that
 > command installs the **wrong library (Better Auth)** instead of the one this project
 > uses (NextAuth). When that happens it only **prints** a secret named
