@@ -354,6 +354,78 @@ const jobs = await prisma.job.findMany({
 });
 ```
 
+On the Browse Jobs page, each job card is now a **link** to that job's own page
+(`/jobs/<id>`), so clicking a card opens its full details.
+
+### `app/jobs/[id]/page.tsx` - the single job page
+
+This shows the full details of one job. The `[id]` in the folder name is a
+**placeholder for the job's id**, so the address `/jobs/abc123` opens the job with id
+`abc123`. The page reads that id from the address and fetches just that one job:
+
+```tsx
+const { id } = await params;
+const job = await prisma.job.findUnique({
+  where: { id },
+  include: { postedBy: true },
+});
+if (!job) notFound(); // show the standard 404 page if the id doesn't exist
+```
+
+It shows the title, salary, company/location/type, description, who posted it, and
+**how long ago** it was posted (using `formatDistanceToNow` from `date-fns`, which
+turns a date into friendly text like "about 3 hours ago"). There's also a
+"Back to jobs" link and an **Apply** button.
+
+### `components/ApplyButton.tsx` - the Apply button
+
+A browser button that lets a logged-in user apply to a job. When clicked:
+
+- If you're **not signed in**, it sends you to the sign-in page
+  (`router.push("/auth/signin")`).
+- If you **are** signed in, it asks the server to record your application and shows a
+  message ("Application sent!", or "You have already applied to this job.").
+
+```tsx
+const handleApply = async () => {
+  if (status === "loading") return;
+  if (status === "unauthenticated") {
+    router.push("/auth/signin"); // not logged in -> go sign in
+    return;
+  }
+  const result = await applyToJob(jobId); // ask the server to save the application
+  // ...show a success or error message...
+};
+```
+
+### `lib/applications.ts` - the "apply to a job" action (server side)
+
+The server action that actually saves an application. It checks you're logged in, then
+creates the application record. The database only allows one application per user per
+job, so applying twice is caught and turned into a friendly message.
+
+```ts
+"use server";
+
+export async function applyToJob(jobId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "You must be signed in to apply." };
+  }
+  try {
+    await prisma.application.create({
+      data: { jobId, userId: session.user.id },
+    });
+    return { success: true };
+  } catch (error) {
+    return { error: "You have already applied to this job." };
+  }
+}
+```
+
+> Same lesson as before: the button hides/redirects for nice UX, but the **real**
+> check is on the server. Never trust the browser alone.
+
 ### `app/dashb` - placeholder page
 
 The Dashboard page. Right now it just shows a title - an empty room waiting to be

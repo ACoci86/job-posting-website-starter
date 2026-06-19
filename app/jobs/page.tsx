@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export default async function JobsPage({searchParams} : {searchParams: Promise<{[key: string]: string | string[] | undefined}>}) {
 const {q, type, location} = await searchParams;
@@ -63,7 +64,11 @@ where: {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <div key={job.id} className="bg-white p-6 rounded-lg shadow-sm">
+            <Link
+              key={job.id}
+              href={`/jobs/${job.id}`}
+              className="block bg-white p-6 rounded-lg shadow-sm hover:shadow-md"
+            >
               <div className="flex items-start justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">{job.title}</h2>
                 {job.salary && (
@@ -77,7 +82,7 @@ where: {
               <p className="mt-2 text-sm text-gray-500">
                 Posted by {job.postedBy.name ?? "Unknown"}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}
