@@ -289,11 +289,42 @@ export async function POST(request: Request) {
 }
 ```
 
-### `app/jobs`, `app/dashb` — placeholder pages
+### `app/jobs/page.tsx` — the "Browse Jobs" page
 
-The pages for Browse Jobs and Dashboard. Right now they just show a title — empty
-rooms waiting to be furnished. They exist so the menu links don't hit a
-"page not found" error.
+This page **shows all the jobs** that have been posted. Because it's a server page, it
+reads them straight from the database — no API route needed:
+
+```tsx
+import { prisma } from "@/lib/prisma";
+
+export default async function JobsPage() {
+  // Get all jobs, newest first, and also load who posted each one.
+  const jobs = await prisma.job.findMany({
+    orderBy: { postedAt: "desc" },
+    include: { postedBy: true },
+  });
+
+  // ...search box at the top...
+
+  // Then show each job as a card (title + salary on the right,
+  // company/location/type, description, and "Posted by <name>").
+}
+```
+
+Two things worth knowing:
+
+- **`orderBy: { postedAt: "desc" }`** shows the newest jobs first.
+- **`include: { postedBy: true }`** also loads the user who posted each job. Prisma
+  doesn't load linked data automatically (the job row only stores the poster's id), so
+  you have to ask for it with `include` — that's what lets the card show "Posted by …".
+
+There's also a search box at the top (search text, job type, location). Right now it's
+just the look — it doesn't filter the list yet.
+
+### `app/dashb` — placeholder page
+
+The Dashboard page. Right now it just shows a title — an empty room waiting to be
+furnished. It exists so the menu link doesn't hit a "page not found" error.
 
 ---
 
